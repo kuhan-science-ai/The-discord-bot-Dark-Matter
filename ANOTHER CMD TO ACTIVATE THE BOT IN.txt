@@ -1,0 +1,5 @@
+ANOTHER CMD TO ACTIVATE THE BOT IN THE HIDDEN PROCESS:
+
+d:
+cd d:\discord.gg-kuhan-ai
+Start-Process -FilePath ".\venv\Scripts\python.exe" -ArgumentList "bot.py" -WindowStyle Hidden

@@ -1,0 +1,16 @@
+USE THIS CMD TO START THE DISCORD BOT:
+
+# 1. Go to the bot folder
+d:
+cd d:\discord.gg-kuhan-ai
+
+# 2. Launch the bot in a hidden process
+Start-Process -FilePath ".\venv\Scripts\python.exe" -ArgumentList "bot.py" -WindowStyle Hidden
+
+Get-Process -Name "python"
+
+
+USE THIS CMD TO STOP THE DISCORD BOT:
+
+Stop-Process -Name "python" -Force
+
