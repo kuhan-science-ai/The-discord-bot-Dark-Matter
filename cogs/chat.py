@@ -6,7 +6,7 @@ import asyncio
 import time
 from typing import Dict, List
 import config
-from services.gemini_service import GeminiService
+from services.ollama_service import OllamaService
 from services.memory_service import MemoryService
 from services.knowledge_service import KnowledgeService
 
@@ -67,12 +67,12 @@ Respond naturally, keeping it short, casual, and human-like based on this contex
 class Chat(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
-        self.gemini_service = GeminiService()
+        self.ollama_service = OllamaService()
         self.spam_tracker: Dict[str, List[float]] = {}
         self.warned_users: Dict[str, float] = {}
 
     def check_rate_limit(self, user_id: str) -> bool:
-        """Rate limiter permitting at most 10 messages per 60 seconds per user to stay within Gemini Free Tier limits."""
+        """Rate limiter permitting at most 10 messages per 60 seconds per user to stay within limits."""
         now = time.time()
         user_history = self.spam_tracker.get(user_id, [])
         # Keep only timestamps within last 60 seconds
@@ -92,7 +92,7 @@ class Chat(commands.Cog):
         prompt: str,
         guild: discord.Guild | None
     ) -> str:
-        """Centralized processor that fetches user history/memory, invokes Gemini, saves replies, and triggers pruning/consolidation."""
+        """Centralized processor that fetches user history/memory, invokes Ollama, saves replies, and triggers pruning/consolidation."""
         user_id = str(author.id)
         
         # 1. Setup user records and load memories
@@ -131,8 +131,8 @@ class Chat(commands.Cog):
             clean_prompt = clean_prompt.replace(f"<@{self.bot.user.id}>", "")
             clean_prompt = clean_prompt.strip()
             
-        # 6. Query Gemini
-        response_text = await self.gemini_service.generate_response(
+        # 6. Query Ollama
+        response_text = await self.ollama_service.generate_response(
             system_instruction=system_instruction,
             history=history,
             prompt=clean_prompt
@@ -150,13 +150,13 @@ class Chat(commands.Cog):
                 user_id=user_id,
                 username=author.name,
                 nickname=author.display_name,
-                gemini_service=self.gemini_service
+                ollama_service=self.ollama_service
             )
         )
         
         return response_text
 
-    @app_commands.command(name="ask", description="Ask Nova anything directly.")
+    @app_commands.command(name="ask", description=f"Ask {config.BOT_NAME} anything directly.")
     @app_commands.describe(question="The question or topic you want to chat about")
     async def ask(self, interaction: discord.Interaction, question: str) -> None:
         """Processes questions received through the slash command interface."""

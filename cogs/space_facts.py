@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands, tasks
 import datetime
 import logging
-from services.gemini_service import GeminiService
+from services.ollama_service import OllamaService
 import config
 
 logger = logging.getLogger("space_facts")
@@ -14,7 +14,7 @@ DAILY_TIME = datetime.time(hour=9, minute=0, tzinfo=IST)
 class SpaceFacts(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
-        self.gemini_service = GeminiService()
+        self.ollama_service = OllamaService()
         # Start the background task loop
         self.daily_fact_loop.start()
 
@@ -43,8 +43,8 @@ class SpaceFacts(commands.Cog):
         )
 
         try:
-            # Query the configured AI model (Gemini or Ollama)
-            fact_text = await self.gemini_service.generate_response(
+            # Query the configured AI model (Ollama)
+            fact_text = await self.ollama_service.generate_response(
                 system_instruction=system_instruction,
                 history=[],
                 prompt=prompt

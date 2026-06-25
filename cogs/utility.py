@@ -48,7 +48,7 @@ class Utility(commands.Cog):
         embed = discord.Embed(
             title=f"👋 Hello, I'm {config.BOT_NAME}!",
             description=(
-                f"I am a friendly, social AI companion powered by Google Gemini. "
+                f"I am a friendly, social AI companion powered by local Ollama AI. "
                 f"I chat, answer questions, help with programming, or just hang out. "
                 f"Talk to me by **mentioning me (@{config.BOT_NAME})** or **replying to my messages**!\n\n"
                 f"Here are the slash commands available:"
@@ -87,7 +87,7 @@ class Utility(commands.Cog):
             inline=False
         )
         
-        embed.set_footer(text="Developed with care • Powered by Gemini 2.5 Flash")
+        embed.set_footer(text=f"Developed with care • Powered by Ollama ({config.OLLAMA_MODEL})")
         await interaction.response.send_message(embed=embed)
 
 async def setup(bot: commands.Bot) -> None:

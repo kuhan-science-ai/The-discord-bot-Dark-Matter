@@ -1,8 +1,8 @@
 import logging
 import json
 from typing import Any, Dict, List, Optional
-from google.genai import types
 import database
+import config
 
 logger = logging.getLogger("memory_service")
 
@@ -94,10 +94,10 @@ class MemoryService:
         user_id: str,
         username: str,
         nickname: str,
-        gemini_service: Any
+        ollama_service: Any
     ) -> None:
         """
-        Triggers memory update by passing short-term transcript to Gemini to extract interests/summaries,
+        Triggers memory update by passing short-term transcript to Ollama to extract interests/summaries,
         updating long-term storage and pruning old records to manage size.
         """
         try:
@@ -117,59 +117,19 @@ class MemoryService:
 
             transcript_lines = []
             for h in history:
-                speaker = nickname if h["role"] == "user" else "Nova"
+                speaker = nickname if h["role"] == "user" else config.BOT_NAME
                 transcript_lines.append(f"{speaker}: {h['content']}")
             transcript = "\n".join(transcript_lines)
 
-            prompt = f"""
-You are a memory consolidation agent for the AI Bot "Nova".
-Your job is to update the long-term memories for user: {nickname} (username: {username}).
-
-Existing memories:
-- Interests: {mem.get('interests', '')}
-- Hobbies: {mem.get('hobbies', '')}
-- Preferences: {mem.get('preferences', '')}
-- Frequently Discussed: {mem.get('frequently_discussed', '')}
-- Summary: {mem.get('summary', '')}
-
-Recent Chat Logs:
-{transcript}
-
-Analyze the logs. Merge any new information into the existing categories. Deduplicate entry lists.
-Update the relationship summary to capture new bonding or facts.
-Return the results ONLY as a valid JSON object. Do not include markdown codeblocks or backticks. 
-Use these exact keys:
-- "interests": updated comma-separated list of interests (or empty)
-- "hobbies": updated comma-separated list of hobbies (or empty)
-- "preferences": updated comma-separated list of preferences (or empty)
-- "frequently_discussed": updated comma-separated list of frequently discussed topics (or empty)
-- "summary": updated 1-2 sentence relationship summary
-"""
-            config_args = types.GenerateContentConfig(
-                temperature=0.2,
-                max_output_tokens=512,
-                response_mime_type="application/json"
+            data = await ollama_service.consolidate_memories(
+                nickname=nickname,
+                username=username,
+                existing_memories=mem,
+                transcript=transcript
             )
-            
-            response = await gemini_service.client.aio.models.generate_content(
-                model=gemini_service.model_name,
-                contents=prompt,
-                config=config_args
-            )
-            
-            if response.text:
-                # Sanitize markdown code blocks if the model wrapped the JSON output
-                raw_text = response.text.strip()
-                if raw_text.startswith("```json"):
-                    raw_text = raw_text[7:]
-                elif raw_text.startswith("```"):
-                    raw_text = raw_text[3:]
-                if raw_text.endswith("```"):
-                    raw_text = raw_text[:-3]
-                raw_text = raw_text.strip()
 
+            if data:
                 try:
-                    data = json.loads(raw_text)
                     await database.execute(
                         """
                         UPDATE user_memories
@@ -186,8 +146,8 @@ Use these exact keys:
                         )
                     )
                     logger.info(f"Consolidated and updated memories for user {username} ({user_id}).")
-                except json.JSONDecodeError as je:
-                    logger.error(f"Incomplete or malformed JSON returned during memory consolidation: {je}. Raw output: {raw_text}")
+                except Exception as ex:
+                    logger.error(f"Failed to update user_memories in database: {ex}", exc_info=True)
                 
                 # Prune history to avoid database bloat and token waste
                 all_ids = await database.fetchall(

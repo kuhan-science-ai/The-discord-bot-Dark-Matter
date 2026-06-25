@@ -11,13 +11,11 @@ ROOT_DIR = Path(__file__).resolve().parent
 
 # Required configurations
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 BOT_NAME = os.getenv("BOT_NAME", "Dark-Matter")
 
-# AI Provider configurations
-AI_PROVIDER = os.getenv("AI_PROVIDER", "gemini").lower()
+# Local AI (Ollama) configurations
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3")
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "gemma2")
 
 # Optional configurations
 DB_PATH_ENV = os.getenv("DB_PATH", "data/database.db")
@@ -53,8 +51,6 @@ def validate_config() -> None:
     missing = []
     if not DISCORD_TOKEN:
         missing.append("DISCORD_TOKEN")
-    if AI_PROVIDER == "gemini" and not GEMINI_API_KEY:
-        missing.append("GEMINI_API_KEY")
         
     if missing:
         raise ValueError(
